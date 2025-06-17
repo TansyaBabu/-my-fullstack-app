@@ -2,71 +2,160 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom styles */
+.gradient-text {
+    @apply bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent;
+}
+
+.card {
+    @apply bg-white rounded-2xl shadow-xl overflow-hidden transform transition-all duration-200 hover:shadow-2xl;
+}
+
+.btn-primary {
+    @apply bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-md;
+}
+
+.btn-secondary {
+    @apply bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-md;
+}
+
+.btn-danger {
+    @apply bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-md;
+}
+
+/* Modern Dashboard Styles */
+.dashboard-container {
+    @apply min-h-screen bg-gradient-to-br from-gray-50 to-gray-100;
+}
+
+.dashboard-header {
+    @apply bg-white shadow-lg border-b border-gray-200;
+}
+
+.dashboard-title {
+    @apply text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent;
+}
+
+.dashboard-card {
+    @apply bg-white rounded-2xl shadow-xl overflow-hidden transform transition-all duration-200 hover:shadow-2xl;
+}
+
+.dashboard-card-header {
+    @apply p-6 border-b border-gray-100;
+}
+
+.dashboard-card-title {
+    @apply text-xl font-bold text-gray-900 flex items-center;
+}
+
+.dashboard-card-icon {
+    @apply w-6 h-6 mr-2 text-indigo-600;
+}
+
+.dashboard-card-content {
+    @apply p-6;
+}
+
+.dashboard-input {
+    @apply w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200;
+}
+
+.dashboard-select {
+    @apply w-full border border-gray-300 rounded-lg shadow-sm py-2 px-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200;
+}
+
+.dashboard-button {
+    @apply w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-md disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.dashboard-list {
+    @apply divide-y divide-gray-200;
+}
+
+.dashboard-list-item {
+    @apply py-4 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors duration-200 rounded-lg px-2;
+}
+
+.dashboard-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.dashboard-badge-success {
+    @apply bg-green-100 text-green-800;
+}
+
+.dashboard-badge-warning {
+    @apply bg-yellow-100 text-yellow-800;
+}
+
+.dashboard-badge-error {
+    @apply bg-red-100 text-red-800;
+}
+
+/* Chart Container Styles */
+.chart-container {
+    @apply bg-gray-50 rounded-xl p-6 h-[500px] flex items-center justify-center;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    @apply animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600;
+}
+
+/* File Upload Area */
+.file-upload-area {
+    @apply flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-xl cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors duration-200;
+}
+
+/* AI Insights Container */
+.ai-insights-container {
+    @apply bg-gray-50 rounded-xl p-6 h-64 overflow-auto;
+}
+
+/* Responsive Grid */
+.dashboard-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8;
+}
+
+/* Welcome Section */
+.welcome-section {
+    @apply bg-white rounded-2xl shadow-xl overflow-hidden mb-8;
+}
+
+.welcome-header {
+    @apply p-8 bg-gradient-to-r from-indigo-500 to-purple-600;
+}
+
+.welcome-title {
+    @apply text-3xl font-bold text-white mb-2;
+}
+
+.welcome-subtitle {
+    @apply text-indigo-100;
+}
+
+/* Remove default styles that might interfere */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
+    color-scheme: light;
+    color: #213547;
+    background-color: #ffffff;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
+/* Remove default button styles */
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
+    all: unset;
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
 }
