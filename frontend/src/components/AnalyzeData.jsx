@@ -239,7 +239,7 @@ const AnalyzeData = () => {
 
                 {/* Main Content */}
                 <div className="bg-white rounded-xl shadow-lg p-8">
-                    {/* File Selection */}
+                {/* File Selection */}
                     <div className="mb-8">
                         <div className="flex items-center mb-4">
                             <div className="p-3 bg-indigo-100 rounded-lg mr-4">
@@ -249,29 +249,29 @@ const AnalyzeData = () => {
                             </div>
                             <h3 className="text-xl font-semibold text-gray-900">Select Your Data File</h3>
                         </div>
-                        <select
+                    <select
                             className="w-full border border-gray-300 rounded-lg shadow-sm py-3 px-4 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                             value={selectedFile?.id || ''}
-                            onChange={(e) => {
-                                const selectedValue = e.target.value;
+                        onChange={(e) => {
+                            const selectedValue = e.target.value;
                                 console.log('Selected value:', selectedValue);
-                                if (!selectedValue) {
-                                    handleFileSelect(null);
-                                    return;
-                                }
+                            if (!selectedValue) {
+                                handleFileSelect(null);
+                                return;
+                            }
                                 const file = uploadedFiles.find(f => f.id === selectedValue);
                                 console.log('Found file:', file);
-                                handleFileSelect(file);
-                            }}
-                        >
+                            handleFileSelect(file);
+                        }}
+                    >
                             <option value="">Choose a file to analyze</option>
-                            {uploadedFiles.map((file) => (
+                        {uploadedFiles.map((file) => (
                                 <option key={file.id} value={file.id}>
                                     {file.fileName} ({new Date(file.uploadDate).toLocaleDateString()})
-                                </option>
-                            ))}
-                        </select>
-                    </div>
+                            </option>
+                        ))}
+                    </select>
+                </div>
 
                     {/* Show loading state */}
                     {isLoading && (
@@ -306,13 +306,13 @@ const AnalyzeData = () => {
                                     <h3 className="text-xl font-semibold text-gray-900">Chart Configuration</h3>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Chart Type
-                                        </label>
-                                        <select
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Chart Type
+                    </label>
+                    <select
                                             className="w-full border border-gray-300 rounded-lg shadow-sm py-3 px-4 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                            value={chartType}
+                        value={chartType}
                                             onChange={(e) => {
                                                 console.log('Chart type changed to:', e.target.value);
                                                 setChartType(e.target.value);
@@ -321,12 +321,12 @@ const AnalyzeData = () => {
                                                 }
                                                 setShowChart(false);
                                             }}
-                                        >
-                                            <option value="Bar">Bar Chart</option>
-                                            <option value="Line">Line Chart</option>
-                                            <option value="Pie">Pie Chart</option>
+                    >
+                        <option value="Bar">Bar Chart</option>
+                        <option value="Line">Line Chart</option>
+                        <option value="Pie">Pie Chart</option>
                                             <option value="3D">3D Chart</option>
-                                        </select>
+                    </select>
                                     </div>
 
                                     {chartType === '3D' && (
@@ -351,9 +351,9 @@ const AnalyzeData = () => {
                                         </div>
                                     )}
                                 </div>
-                            </div>
+                </div>
 
-                            {/* Axis Selection */}
+                         {/* Axis Selection */}
                             <div className="mb-8">
                                 <div className="flex items-center mb-4">
                                     <div className="p-3 bg-green-100 rounded-lg mr-4">
@@ -364,37 +364,37 @@ const AnalyzeData = () => {
                                     <h3 className="text-xl font-semibold text-gray-900">Select Your Axes</h3>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            X-Axis
-                                        </label>
-                                        <select
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            X-Axis
+                        </label>
+                        <select
                                             className="w-full border border-gray-300 rounded-lg shadow-sm py-3 px-4 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                            value={xAxis}
-                                            onChange={(e) => setXAxis(e.target.value)}
-                                        >
-                                            <option value="">Select X-Axis</option>
-                                            {Object.keys(fileData[0]).map((key) => (
-                                                <option key={key} value={key}>{key}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Y-Axis
-                                        </label>
-                                        <select
+                            value={xAxis}
+                            onChange={(e) => setXAxis(e.target.value)}
+                        >
+                            <option value="">Select X-Axis</option>
+                            {Object.keys(fileData[0]).map((key) => (
+                                <option key={key} value={key}>{key}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Y-Axis
+                        </label>
+                        <select
                                             className="w-full border border-gray-300 rounded-lg shadow-sm py-3 px-4 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                                            value={yAxis}
-                                            onChange={(e) => setYAxis(e.target.value)}
-                                        >
-                                            <option value="">Select Y-Axis</option>
-                                            {Object.keys(fileData[0]).map((key) => (
-                                                <option key={key} value={key}>{key}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
+                            value={yAxis}
+                            onChange={(e) => setYAxis(e.target.value)}
+                        >
+                            <option value="">Select Y-Axis</option>
+                            {Object.keys(fileData[0]).map((key) => (
+                                <option key={key} value={key}>{key}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
                             </div>
 
                             {/* Chart Visualization */}
@@ -504,7 +504,7 @@ const AnalyzeData = () => {
                             )}
 
                             {/* Smart Suggestions */}
-                            {suggestedChart && (
+                {suggestedChart && (
                                 <div className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
                                     <div className="flex items-center mb-4">
                                         <div className="p-3 bg-blue-100 rounded-lg mr-4">
@@ -527,9 +527,9 @@ const AnalyzeData = () => {
                                             <span className="font-medium w-40">Suggested Y-Axis:</span>
                                             <span className="bg-blue-100 px-3 py-1 rounded-full text-sm">{suggestedYAxis}</span>
                                         </div>
-                                    </div>
-                                </div>
-                            )}
+                    </div>
+                </div>
+            )}
 
                             {/* 3D Chart Options */}
                             <div className="mb-8 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-100">
@@ -564,22 +564,22 @@ const AnalyzeData = () => {
                                     {selected3DChartType && (
                                         <div className="text-sm text-purple-600 bg-purple-50 p-4 rounded-lg">
                                             <p>Selected 3D chart type: <span className="font-semibold">{selected3DChartType}</span></p>
-                                        </div>
-                                    )}
+                    </div>
+                )}
                                 </div>
                             </div>
 
                             {/* Generate Chart Button */}
                             <div className="flex justify-center">
-                                <button
+                <button
                                     onClick={() => setShowChart(true)}
-                                    disabled={!selectedFile || !xAxis || !yAxis || isLoading}
+                    disabled={!selectedFile || !xAxis || !yAxis || isLoading}
                                     className={`w-full md:w-auto px-8 py-3 rounded-lg text-white font-semibold text-lg transition-all duration-200 ${
                                         (!selectedFile || !xAxis || !yAxis || isLoading)
                                             ? 'bg-gray-400 cursor-not-allowed'
                                             : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 transform hover:scale-105'
-                                    }`}
-                                >
+                    }`}
+                >
                                     {isLoading ? (
                                         <span className="flex items-center justify-center">
                                             <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -591,7 +591,7 @@ const AnalyzeData = () => {
                                     ) : (
                                         'Generate Chart'
                                     )}
-                                </button>
+                </button>
                             </div>
                         </>
                     )}

@@ -22,6 +22,20 @@ const upload = multer({
 // @route   POST /api/upload
 // @access  Private
 const uploadFile = asyncHandler(async (req, res) => {
+    console.log('Upload request received:', {
+        user: req.user ? { id: req.user._id, email: req.user.email } : 'no user',
+        file: req.file ? {
+            originalname: req.file.originalname,
+            size: req.file.size,
+            mimetype: req.file.mimetype
+        } : 'no file'
+    });
+
+    if (!req.user || !req.user._id) {
+        res.status(401);
+        throw new Error('User not authenticated');
+    }
+
     if (!req.file) {
         res.status(400);
         throw new Error('No file uploaded');
@@ -38,9 +52,15 @@ const uploadFile = asyncHandler(async (req, res) => {
 
         // Save data to MongoDB
         const fileData = await FileData.create({
-            user: req.user.id, // Assuming user ID is available from authentication middleware
+            user: req.user._id,
             fileName: fileName,
             data: data,
+        });
+
+        console.log('File data saved:', {
+            fileId: fileData._id,
+            fileName: fileData.fileName,
+            userId: fileData.user
         });
 
         res.status(201).json({
@@ -51,6 +71,7 @@ const uploadFile = asyncHandler(async (req, res) => {
         });
 
     } catch (error) {
+        console.error('Error processing file:', error);
         res.status(500);
         throw new Error(`Error processing file: ${error.message}`);
     }
@@ -60,7 +81,18 @@ const uploadFile = asyncHandler(async (req, res) => {
 // @route   GET /api/upload/history
 // @access  Private
 const getUploadHistory = asyncHandler(async (req, res) => {
-    const files = await FileData.find({ user: req.user.id }).sort({ createdAt: -1 });
+    console.log('Get upload history request:', {
+        user: req.user ? { id: req.user._id, email: req.user.email } : 'no user'
+    });
+
+    if (!req.user || !req.user._id) {
+        res.status(401);
+        throw new Error('User not authenticated');
+    }
+
+    const files = await FileData.find({ user: req.user._id }).sort({ createdAt: -1 });
+
+    console.log('Found files:', files.length);
 
     res.status(200).json(files.map(file => ({
         id: file._id,
@@ -74,6 +106,11 @@ const getUploadHistory = asyncHandler(async (req, res) => {
 // @route   GET /api/upload/:id
 // @access  Private
 const getFileData = asyncHandler(async (req, res) => {
+    if (!req.user || !req.user._id) {
+        res.status(401);
+        throw new Error('User not authenticated');
+    }
+
     const file = await FileData.findById(req.params.id);
 
     if (!file) {
@@ -81,7 +118,7 @@ const getFileData = asyncHandler(async (req, res) => {
         throw new Error('File not found');
     }
 
-    if (file.user.toString() !== req.user.id) {
+    if (file.user.toString() !== req.user._id.toString()) {
         res.status(401);
         throw new Error('Not authorized to view this file');
     }

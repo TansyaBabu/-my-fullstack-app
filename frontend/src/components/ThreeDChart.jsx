@@ -85,17 +85,17 @@ const ThreeDChart = ({ data, xAxis, yAxis, chartType }) => {
                 case '3DBar':
                     console.log('Creating 3D Bar chart');
                     // Create 3D bars
-                    yValues.forEach((val, index) => {
+            yValues.forEach((val, index) => {
                         const barHeight = val / maxVal * 10;
-                        const geometry = new THREE.BoxGeometry(barWidth, barHeight, barDepth);
+                const geometry = new THREE.BoxGeometry(barWidth, barHeight, barDepth);
                         const material = new THREE.MeshPhongMaterial({ 
                             color: new THREE.Color().setHSL(index / xValues.length, 0.7, 0.5)
                         });
-                        const bar = new THREE.Mesh(geometry, material);
+                const bar = new THREE.Mesh(geometry, material);
 
-                        bar.position.x = startX + index * (barWidth + spacing);
+                bar.position.x = startX + index * (barWidth + spacing);
                         bar.position.y = barHeight / 2;
-                        bar.position.z = 0;
+                bar.position.z = 0;
                         chartGroup.add(bar);
 
                         // Add value label

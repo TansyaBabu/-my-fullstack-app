@@ -12,13 +12,24 @@ const protect = asyncHandler(async (req, res, next) => {
 
             // Verify token
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            console.log('Decoded token:', decoded);
 
-            // Get user from the token
-            req.user = await User.findById(decoded.id).select('-password');
+            // Get user from the token using userId instead of id
+            const user = await User.findById(decoded.userId).select('-password');
+            console.log('Found user:', user ? { id: user._id, email: user.email } : 'null');
+
+            if (!user) {
+                res.status(401);
+                throw new Error('User not found');
+            }
+
+            // Set user in request
+            req.user = user;
+            console.log('Set user in request:', { id: req.user._id, email: req.user.email });
 
             next();
         } catch (error) {
-            console.error(error);
+            console.error('Auth middleware error:', error);
             res.status(401);
             throw new Error('Not authorized');
         }

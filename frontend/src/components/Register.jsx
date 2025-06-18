@@ -9,6 +9,7 @@ const Register = () => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [localError, setLocalError] = useState(null);
+    const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -16,6 +17,7 @@ const Register = () => {
 
     useEffect(() => {
         if (error) {
+            console.log('Registration error from Redux:', error);
             setLocalError(error);
         } else {
             setLocalError(null);
@@ -23,26 +25,58 @@ const Register = () => {
     }, [error]);
 
     useEffect(() => {
-        if (user) {
-            navigate('/', { replace: true });
+        if (registrationSuccess) {
+            // Clear form
+            setUsername('');
+            setEmail('');
+            setPassword('');
+            setConfirmPassword('');
+            
+            // Show success message and redirect to login
+            setTimeout(() => {
+                navigate('/login', { 
+                    state: { 
+                        message: 'Registration successful! Please log in to continue.' 
+                    }
+                });
+            }, 1500);
         }
-    }, [user, navigate]);
+    }, [registrationSuccess, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLocalError(null);
+
+        // Validate inputs
+        if (!username || !email || !password || !confirmPassword) {
+            setLocalError('All fields are required');
+            return;
+        }
 
         if (password !== confirmPassword) {
             setLocalError('Passwords do not match');
             return;
         }
 
+        if (password.length < 6) {
+            setLocalError('Password must be at least 6 characters long');
+            return;
+        }
+
         try {
+            console.log('Attempting registration with:', { username, email });
             const result = await dispatch(register({ username, email, password })).unwrap();
             console.log('Registration successful:', result);
+            
+            if (!result || !result.token) {
+                console.error('Invalid registration response:', result);
+                throw new Error('Invalid response from server');
+            }
+
+            setRegistrationSuccess(true);
         } catch (err) {
             console.error('Registration error:', err);
-            setLocalError('Registration failed. Please try again.');
+            setLocalError(err.message || 'Registration failed. Please try again.');
         }
     };
 
@@ -50,6 +84,11 @@ const Register = () => {
         <div className="flex items-center justify-center min-h-screen bg-gray-100">
             <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
                 <h2 className="text-2xl font-bold text-center">Create Account</h2>
+                {registrationSuccess && (
+                    <div className="p-3 text-sm text-green-700 bg-green-100 rounded-lg">
+                        Registration successful! Redirecting to login...
+                    </div>
+                )}
                 {localError && (
                     <div className="p-3 text-sm text-red-700 bg-red-100 rounded-lg">
                         {localError}

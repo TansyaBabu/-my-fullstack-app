@@ -1,19 +1,31 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { login } from '../redux/slices/userSlice';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [localError, setLocalError] = useState(null);
+    const [successMessage, setSuccessMessage] = useState('');
 
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
     const { user, loading, error } = useSelector((state) => state.user);
 
     useEffect(() => {
+        // Check for registration success message
+        if (location.state?.message) {
+            setSuccessMessage(location.state.message);
+            // Clear the message from location state
+            window.history.replaceState({}, document.title);
+        }
+    }, [location]);
+
+    useEffect(() => {
         if (error) {
+            console.log('Login error from Redux:', error);
             setLocalError(error);
         } else {
             setLocalError(null);
@@ -36,13 +48,31 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLocalError(null);
+        setSuccessMessage('');
+        
+        if (!email || !password) {
+            setLocalError('Please enter both email and password');
+            return;
+        }
+
         try {
             console.log('Attempting login with:', { email });
             const result = await dispatch(login({ email, password })).unwrap();
             console.log('Login successful, result:', result);
+            
+            if (!result || !result.token) {
+                console.error('Invalid login response:', result);
+                throw new Error('Invalid login response from server');
+            }
+
+            if (result.isAdmin) {
+                navigate('/admin', { replace: true });
+            } else {
+                navigate('/', { replace: true });
+            }
         } catch (err) {
             console.error('Login error:', err);
-            setLocalError('Login failed. Please check your credentials and try again.');
+            setLocalError(err.message || 'Login failed. Please check your credentials and try again.');
         }
     };
 
@@ -50,6 +80,11 @@ const Login = () => {
         <div className="flex items-center justify-center min-h-screen bg-gray-100">
             <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
                 <h2 className="text-2xl font-bold text-center">Login</h2>
+                {successMessage && (
+                    <div className="p-3 text-sm text-green-700 bg-green-100 rounded-lg">
+                        {successMessage}
+                    </div>
+                )}
                 {localError && (
                     <div className="p-3 text-sm text-red-700 bg-red-100 rounded-lg">
                         {localError}

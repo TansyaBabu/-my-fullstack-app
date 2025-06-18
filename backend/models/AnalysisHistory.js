@@ -13,8 +13,7 @@ const analysisHistorySchema = new mongoose.Schema({
     },
     fileId: {
         type: String,
-        required: true,
-        unique: true
+        required: true
     },
     filePath: {
         type: String,
@@ -22,7 +21,7 @@ const analysisHistorySchema = new mongoose.Schema({
     },
     chartType: {
         type: String,
-        enum: ['Bar', 'Line', 'Pie', 'Scatter'],
+        enum: ['Bar', 'Line', 'Pie', 'Scatter', '3DBar', '3DColumn', '3DScatter'],
         default: 'Bar'
     },
     xAxis: {
@@ -47,6 +46,7 @@ const analysisHistorySchema = new mongoose.Schema({
 
 // Add index for faster queries
 analysisHistorySchema.index({ analysisDate: -1 });
+analysisHistorySchema.index({ userId: 1, fileId: 1 }); // Compound index for faster lookups
 
 const AnalysisHistory = mongoose.model('AnalysisHistory', analysisHistorySchema);
 

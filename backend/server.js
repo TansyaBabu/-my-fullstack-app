@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
-const taskRoutes = require('./routes/taskRoutes');
+const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const fileUploadRoutes = require('./routes/fileUploadRoutes');
 require('dotenv').config();
@@ -25,7 +25,7 @@ connectDB().catch(err => {
 
 // Middleware
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5177'],
+    origin: ['http://localhost:5173', 'http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -48,7 +48,7 @@ app.get('/health', (req, res) => {
 });
 
 // Routes
-app.use('/api/tasks', taskRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/upload', fileUploadRoutes);
 
