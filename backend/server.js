@@ -5,6 +5,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const fileUploadRoutes = require('./routes/fileUploadRoutes');
+const analysisRoutes = require('./routes/analysisRoutes');
 require('dotenv').config();
 const mongoose = require('mongoose');
 
@@ -51,6 +52,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/upload', fileUploadRoutes);
+app.use('/api/analysis', analysisRoutes);
 
 // Default route
 app.get('/', (req, res) => {

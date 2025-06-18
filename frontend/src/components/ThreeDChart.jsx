@@ -1,19 +1,35 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 const ThreeDChart = ({ data, xAxis, yAxis, chartType }) => {
     console.log('ThreeDChart props:', { data, xAxis, yAxis, chartType });
     const mountRef = useRef(null);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         console.log('ThreeDChart useEffect running');
         const currentMount = mountRef.current;
         console.log('Mount element:', currentMount);
 
+        if (!currentMount) {
+            console.error('Mount element is null');
+            setError('Mount element is null');
+            return;
+        }
+
+        if (!data || !xAxis || !yAxis || !chartType) {
+            console.error('Missing required props:', { data: !!data, xAxis, yAxis, chartType });
+            setError('Missing required props');
+            return;
+        }
+
+        setError(null); // Clear any previous errors
+
+        try {
         // Clear previous scene elements if component re-renders with new data
         if (currentMount.children.length > 0) {
-            console.log('Clearing previous scene elements');
+                console.log('Clearing previous scene elements');
             while (currentMount.firstChild) {
                 currentMount.removeChild(currentMount.firstChild);
             }
@@ -30,7 +46,7 @@ const ThreeDChart = ({ data, xAxis, yAxis, chartType }) => {
             0.1,
             1000
         );
-        camera.position.set(0, 10, 15);
+            camera.position.set(0, 10, 15);
         camera.lookAt(0, 0, 0);
 
         // Renderer setup
@@ -39,9 +55,9 @@ const ThreeDChart = ({ data, xAxis, yAxis, chartType }) => {
         currentMount.appendChild(renderer.domElement);
 
         // Lights
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
         scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
         directionalLight.position.set(5, 10, 7);
         scene.add(directionalLight);
 
@@ -53,134 +69,134 @@ const ThreeDChart = ({ data, xAxis, yAxis, chartType }) => {
         controls.maxPolarAngle = Math.PI / 2;
 
         if (data && data.length > 0 && xAxis && yAxis) {
-            console.log('Creating chart with data:', { data, xAxis, yAxis, chartType });
+                console.log('Creating chart with data:', { data, xAxis, yAxis, chartType });
             const xValues = data.map(d => d[xAxis]);
             const yValues = data.map(d => parseFloat(d[yAxis]));
 
             const maxVal = Math.max(...yValues);
             const minVal = Math.min(...yValues);
 
-            const barWidth = 1;
-            const barDepth = 1;
-            const spacing = 0.5;
+                const barWidth = 1;
+                const barDepth = 1;
+                const spacing = 0.5;
 
             const startX = -((xValues.length - 1) * (barWidth + spacing)) / 2;
 
-            // Create a group for all chart elements
-            const chartGroup = new THREE.Group();
-            scene.add(chartGroup);
+                // Create a group for all chart elements
+                const chartGroup = new THREE.Group();
+                scene.add(chartGroup);
 
-            // Add a base plane
-            const planeGeometry = new THREE.PlaneGeometry(20, 20);
-            const planeMaterial = new THREE.MeshPhongMaterial({ 
-                color: 0xcccccc,
-                side: THREE.DoubleSide
-            });
-            const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-            plane.rotation.x = -Math.PI / 2;
-            plane.position.y = -0.1;
-            chartGroup.add(plane);
+                // Add a base plane
+                const planeGeometry = new THREE.PlaneGeometry(20, 20);
+                const planeMaterial = new THREE.MeshPhongMaterial({ 
+                    color: 0xcccccc,
+                    side: THREE.DoubleSide
+                });
+                const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+                plane.rotation.x = -Math.PI / 2;
+                plane.position.y = -0.1;
+                chartGroup.add(plane);
 
-            switch (chartType) {
-                case '3DBar':
-                    console.log('Creating 3D Bar chart');
-                    // Create 3D bars
+                switch (chartType) {
+                    case '3DBar':
+                        console.log('Creating 3D Bar chart');
+                        // Create 3D bars
             yValues.forEach((val, index) => {
-                        const barHeight = val / maxVal * 10;
+                            const barHeight = val / maxVal * 10;
                 const geometry = new THREE.BoxGeometry(barWidth, barHeight, barDepth);
-                        const material = new THREE.MeshPhongMaterial({ 
-                            color: new THREE.Color().setHSL(index / xValues.length, 0.7, 0.5)
-                        });
+                            const material = new THREE.MeshPhongMaterial({ 
+                                color: new THREE.Color().setHSL(index / xValues.length, 0.7, 0.5)
+                            });
                 const bar = new THREE.Mesh(geometry, material);
 
                 bar.position.x = startX + index * (barWidth + spacing);
-                        bar.position.y = barHeight / 2;
+                            bar.position.y = barHeight / 2;
                 bar.position.z = 0;
-                        chartGroup.add(bar);
+                            chartGroup.add(bar);
 
-                        // Add value label
-                        const valueLabel = createTextSprite(val.toString());
-                        valueLabel.position.set(bar.position.x, barHeight + 0.5, 0);
-                        chartGroup.add(valueLabel);
-                    });
-                    break;
-
-                case '3DLine':
-                    console.log('Creating 3D Line chart');
-                    // Create 3D line
-                    const points = [];
-                    yValues.forEach((val, index) => {
-                        const x = startX + index * (barWidth + spacing);
-                        const y = val / maxVal * 10;
-                        points.push(new THREE.Vector3(x, y, 0));
-                    });
-
-                    const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-                    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x42a5f5 });
-                    const line = new THREE.Line(lineGeometry, lineMaterial);
-                    chartGroup.add(line);
-
-                    // Add points at each data point
-                    points.forEach((point, index) => {
-                        const sphereGeometry = new THREE.SphereGeometry(0.2);
-                        const sphereMaterial = new THREE.MeshPhongMaterial({ 
-                            color: new THREE.Color().setHSL(index / points.length, 0.7, 0.5)
+                            // Add value label
+                            const valueLabel = createTextSprite(val.toString());
+                            valueLabel.position.set(bar.position.x, barHeight + 0.5, 0);
+                            chartGroup.add(valueLabel);
                         });
-                        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
-                        sphere.position.copy(point);
-                        chartGroup.add(sphere);
+                        break;
 
-                        // Add value label
-                        const valueLabel = createTextSprite(yValues[index].toString());
-                        valueLabel.position.set(point.x, point.y + 0.5, 0);
-                        chartGroup.add(valueLabel);
-                    });
-                    break;
-
-                case '3DPie':
-                    console.log('Creating 3D Pie chart');
-                    // Create 3D pie chart
-                    const radius = 5;
-                    const total = yValues.reduce((sum, val) => sum + val, 0);
-                    let startAngle = 0;
-
-                    yValues.forEach((val, index) => {
-                        const angle = (val / total) * Math.PI * 2;
-                        const geometry = new THREE.CylinderGeometry(radius, radius, 1, 32, 1, true, startAngle, angle);
-                        const material = new THREE.MeshPhongMaterial({ 
-                            color: new THREE.Color().setHSL(index / yValues.length, 0.7, 0.5),
-                            side: THREE.DoubleSide
+                    case '3DLine':
+                        console.log('Creating 3D Line chart');
+                        // Create 3D line
+                        const points = [];
+                        yValues.forEach((val, index) => {
+                            const x = startX + index * (barWidth + spacing);
+                            const y = val / maxVal * 10;
+                            points.push(new THREE.Vector3(x, y, 0));
                         });
-                        const slice = new THREE.Mesh(geometry, material);
-                        slice.rotation.x = Math.PI / 2;
-                        chartGroup.add(slice);
 
-                        // Add value label
-                        const valueLabel = createTextSprite(val.toString());
-                        const labelAngle = startAngle + angle / 2;
-                        valueLabel.position.set(
-                            Math.cos(labelAngle) * (radius + 1),
-                            0.5,
-                            Math.sin(labelAngle) * (radius + 1)
-                        );
-                        chartGroup.add(valueLabel);
+                        const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+                        const lineMaterial = new THREE.LineBasicMaterial({ color: 0x42a5f5 });
+                        const line = new THREE.Line(lineGeometry, lineMaterial);
+                        chartGroup.add(line);
 
-                        startAngle += angle;
-                    });
-                    break;
+                        // Add points at each data point
+                        points.forEach((point, index) => {
+                            const sphereGeometry = new THREE.SphereGeometry(0.2);
+                            const sphereMaterial = new THREE.MeshPhongMaterial({ 
+                                color: new THREE.Color().setHSL(index / points.length, 0.7, 0.5)
+                            });
+                            const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                            sphere.position.copy(point);
+                            chartGroup.add(sphere);
 
-                default:
-                    console.log('Unknown chart type:', chartType);
-            }
+                            // Add value label
+                            const valueLabel = createTextSprite(yValues[index].toString());
+                            valueLabel.position.set(point.x, point.y + 0.5, 0);
+                            chartGroup.add(valueLabel);
+                        });
+                        break;
 
-            // Add X-axis labels
-            xValues.forEach((label, index) => {
-                const xLabel = createTextSprite(label);
-                xLabel.position.set(startX + index * (barWidth + spacing), -1, 0);
-                chartGroup.add(xLabel);
-            });
-        } else {
-            console.log('Missing required props:', { hasData: !!data, dataLength: data?.length, xAxis, yAxis });
+                    case '3DPie':
+                        console.log('Creating 3D Pie chart');
+                        // Create 3D pie chart
+                        const radius = 5;
+                        const total = yValues.reduce((sum, val) => sum + val, 0);
+                        let startAngle = 0;
+
+                        yValues.forEach((val, index) => {
+                            const angle = (val / total) * Math.PI * 2;
+                            const geometry = new THREE.CylinderGeometry(radius, radius, 1, 32, 1, true, startAngle, angle);
+                            const material = new THREE.MeshPhongMaterial({ 
+                                color: new THREE.Color().setHSL(index / yValues.length, 0.7, 0.5),
+                                side: THREE.DoubleSide
+                            });
+                            const slice = new THREE.Mesh(geometry, material);
+                            slice.rotation.x = Math.PI / 2;
+                            chartGroup.add(slice);
+
+                            // Add value label
+                            const valueLabel = createTextSprite(val.toString());
+                            const labelAngle = startAngle + angle / 2;
+                            valueLabel.position.set(
+                                Math.cos(labelAngle) * (radius + 1),
+                                0.5,
+                                Math.sin(labelAngle) * (radius + 1)
+                            );
+                            chartGroup.add(valueLabel);
+
+                            startAngle += angle;
+                        });
+                        break;
+
+                    default:
+                        console.log('Unknown chart type:', chartType);
+                }
+
+                // Add X-axis labels
+                xValues.forEach((label, index) => {
+                    const xLabel = createTextSprite(label);
+                    xLabel.position.set(startX + index * (barWidth + spacing), -1, 0);
+                    chartGroup.add(xLabel);
+                });
+            } else {
+                console.log('Missing required props:', { hasData: !!data, dataLength: data?.length, xAxis, yAxis });
         }
 
         // Animation loop
@@ -201,8 +217,9 @@ const ThreeDChart = ({ data, xAxis, yAxis, chartType }) => {
 
         // Cleanup
         return () => {
-            console.log('Cleaning up ThreeDChart');
+                console.log('Cleaning up ThreeDChart');
             window.removeEventListener('resize', handleResize);
+                if (currentMount && renderer) {
             currentMount.removeChild(renderer.domElement);
             renderer.dispose();
             controls.dispose();
@@ -211,7 +228,12 @@ const ThreeDChart = ({ data, xAxis, yAxis, chartType }) => {
                 object.geometry.dispose();
                 object.material.dispose();
             });
+                }
         };
+        } catch (error) {
+            console.error('Error in ThreeDChart:', error);
+            setError('An error occurred');
+        }
     }, [data, xAxis, yAxis, chartType]);
 
     // Helper function to create text sprites
@@ -234,7 +256,29 @@ const ThreeDChart = ({ data, xAxis, yAxis, chartType }) => {
         return sprite;
     };
 
-    return <div ref={mountRef} style={{ width: '100%', height: '100%' }} />;
+    return (
+        <div ref={mountRef} style={{ width: '100%', height: '100%', position: 'relative' }}>
+            {error && (
+                <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    background: 'rgba(255, 0, 0, 0.1)',
+                    padding: '20px',
+                    borderRadius: '8px',
+                    border: '1px solid red',
+                    color: 'red',
+                    textAlign: 'center',
+                    zIndex: 1000
+                }}>
+                    <h3>3D Chart Error</h3>
+                    <p>{error}</p>
+                    <p>Props: {JSON.stringify({ hasData: !!data, dataLength: data?.length, xAxis, yAxis, chartType })}</p>
+                </div>
+            )}
+        </div>
+    );
 };
 
 export default ThreeDChart; 

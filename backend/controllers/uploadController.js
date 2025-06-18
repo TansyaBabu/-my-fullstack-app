@@ -72,6 +72,7 @@ const uploadFile = async (req, res) => {
 
         // Create new analysis history entry
         const analysisHistory = new AnalysisHistory({
+            userId: req.user._id,
             fileName: req.file.originalname,
             fileId: req.file.filename,
             filePath: req.file.path,

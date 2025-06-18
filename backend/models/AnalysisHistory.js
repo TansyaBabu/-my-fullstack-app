@@ -21,7 +21,7 @@ const analysisHistorySchema = new mongoose.Schema({
     },
     chartType: {
         type: String,
-        enum: ['Bar', 'Line', 'Pie', 'Scatter', '3DBar', '3DColumn', '3DScatter'],
+        enum: ['Bar', 'Line', 'Pie', 'Scatter', '3DBar', '3DLine', '3DPie', '3DColumn', '3DScatter'],
         default: 'Bar'
     },
     xAxis: {

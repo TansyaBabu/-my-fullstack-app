@@ -68,6 +68,22 @@ export const logout = createAsyncThunk(
     }
 );
 
+// Update user action
+export const updateUser = createAsyncThunk(
+    'user/updateUser',
+    async (userData, { rejectWithValue }) => {
+        try {
+            // Update localStorage
+            const currentUser = JSON.parse(localStorage.getItem('user'));
+            const updatedUser = { ...currentUser, ...userData };
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            return updatedUser;
+        } catch (error) {
+            return rejectWithValue('Failed to update user data');
+            }
+    }
+);
+
 const initialState = {
     user: JSON.parse(localStorage.getItem('user')) || null,
     loading: false,
@@ -116,6 +132,10 @@ const userSlice = createSlice({
             .addCase(logout.fulfilled, (state) => {
                 state.user = null;
                 state.error = null;
+            })
+            // Update User
+            .addCase(updateUser.fulfilled, (state, action) => {
+                state.user = action.payload;
             });
     }
 });
