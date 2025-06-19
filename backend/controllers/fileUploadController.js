@@ -106,6 +106,11 @@ const getUploadHistory = asyncHandler(async (req, res) => {
 // @route   GET /api/upload/:id
 // @access  Private
 const getFileData = asyncHandler(async (req, res) => {
+    if (req.params.id === 'all') {
+        res.status(400);
+        throw new Error('Invalid file ID');
+    }
+
     if (!req.user || !req.user._id) {
         res.status(401);
         throw new Error('User not authenticated');
@@ -118,7 +123,8 @@ const getFileData = asyncHandler(async (req, res) => {
         throw new Error('File not found');
     }
 
-    if (file.user.toString() !== req.user._id.toString()) {
+    // Allow if user is owner OR user is admin
+    if (file.user.toString() !== req.user._id.toString() && !req.user.isAdmin) {
         res.status(401);
         throw new Error('Not authorized to view this file');
     }
@@ -131,9 +137,45 @@ const getFileData = asyncHandler(async (req, res) => {
     });
 });
 
+// @desc    Get all uploaded files (admin, paginated)
+// @route   GET /api/upload/all?page=1&limit=10
+// @access  Private/Admin
+const getAllFilesAdmin = asyncHandler(async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const [files, total] = await Promise.all([
+        FileData.find({})
+            .populate('user', 'username email')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit),
+        FileData.countDocuments()
+    ]);
+
+    res.status(200).json({
+        files: files.map(file => ({
+            id: file._id,
+            fileName: file.fileName,
+            uploadDate: file.createdAt,
+            dataSize: file.data.length,
+            uploader: file.user ? {
+                id: file.user._id,
+                username: file.user.username,
+                email: file.user.email
+            } : null
+        })),
+        page,
+        totalPages: Math.ceil(total / limit),
+        totalFiles: total
+    });
+});
+
 module.exports = {
     upload,
     uploadFile,
     getUploadHistory,
     getFileData,
+    getAllFilesAdmin,
 }; 

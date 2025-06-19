@@ -34,13 +34,11 @@ const Login = () => {
 
     useEffect(() => {
         if (user) {
-            console.log('User logged in:', user);
+            console.log('User after login:', user);
             if (user.isAdmin === true) {
-                console.log('User is admin, redirecting to admin dashboard');
                 navigate('/admin', { replace: true });
             } else {
-                console.log('User is regular user, redirecting to home');
-                navigate('/', { replace: true });
+                navigate('/dashboard', { replace: true });
             }
         }
     }, [user, navigate]);
@@ -68,7 +66,7 @@ const Login = () => {
             if (result.isAdmin) {
                 navigate('/admin', { replace: true });
             } else {
-                navigate('/', { replace: true });
+                navigate('/dashboard', { replace: true });
             }
         } catch (err) {
             console.error('Login error:', err);
@@ -77,43 +75,52 @@ const Login = () => {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100">
-            <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-                <h2 className="text-2xl font-bold text-center">Login</h2>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-teal-400 via-cyan-200 to-blue-300 px-4">
+            <div className="w-full max-w-md p-8 space-y-6 bg-white/60 backdrop-blur-lg rounded-2xl shadow-2xl">
+                <div className="flex flex-col items-center mb-4">
+                    <span className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-teal-100 shadow">
+                        <svg className="w-10 h-10" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="48" height="48" rx="12" fill="#14b8a6"/>
+                            <path d="M14 34L34 14M14 14l20 20" stroke="#fff" strokeWidth="3" strokeLinecap="round"/>
+                            <rect x="10" y="10" width="28" height="28" rx="6" stroke="#fff" strokeWidth="2"/>
+                        </svg>
+                    </span>
+                    <h2 className="text-3xl font-extrabold text-teal-700 mt-4 mb-2">Sign in to ExcelVerse</h2>
+                </div>
                 {successMessage && (
-                    <div className="p-3 text-sm text-green-700 bg-green-100 rounded-lg">
+                    <div className="p-3 text-sm text-green-700 bg-green-100 rounded-lg text-center">
                         {successMessage}
                     </div>
                 )}
                 {localError && (
-                    <div className="p-3 text-sm text-red-700 bg-red-100 rounded-lg">
+                    <div className="p-3 text-sm text-red-700 bg-red-100 rounded-lg text-center">
                         {localError}
                     </div>
                 )}
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email address</label>
+                        <label htmlFor="email" className="block text-sm font-medium text-teal-700">Email address</label>
                         <input
                             id="email"
                             name="email"
                             type="email"
                             autoComplete="email"
                             required
-                            className="w-full px-3 py-2 mt-1 border rounded-md shadow-sm appearance-none focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full px-3 py-2 mt-1 border border-teal-200 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400 bg-white/80"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="Enter your email"
                         />
                     </div>
                     <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+                        <label htmlFor="password" className="block text-sm font-medium text-teal-700">Password</label>
                         <input
                             id="password"
                             name="password"
                             type="password"
                             autoComplete="current-password"
                             required
-                            className="w-full px-3 py-2 mt-1 border rounded-md shadow-sm appearance-none focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full px-3 py-2 mt-1 border border-teal-200 rounded-md shadow-sm appearance-none focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-teal-400 bg-white/80"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="Enter your password"
@@ -121,17 +128,17 @@ const Login = () => {
                     </div>
                     <button
                         type="submit"
-                        className={`w-full px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'}`}
+                        className={`w-full px-4 py-2 text-white rounded-md font-bold shadow focus:outline-none focus:ring-2 focus:ring-offset-2 transition ${loading ? 'bg-teal-300 cursor-not-allowed' : 'bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 focus:ring-teal-400'}`}
                         disabled={loading}
                     >
                         {loading ? 'Signing In...' : 'Sign in'}
                     </button>
                 </form>
-                <div className="text-sm text-center space-y-2">
+                <div className="text-sm text-center space-y-2 mt-4">
                     <p className="text-gray-600">Admin Login: admin@example.com / admin123</p>
                     <p className="text-gray-600">
                         Don't have an account?{' '}
-                        <Link to="/register" className="text-blue-600 hover:text-blue-800">
+                        <Link to="/register" className="text-teal-600 hover:text-teal-800 font-semibold">
                             Sign up here
                         </Link>
                     </p>

@@ -4,7 +4,7 @@ const AnalysisHistory = require('../models/AnalysisHistory');
 const xlsx = require('xlsx');
 const path = require('path');
 const fs = require('fs');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, admin } = require('../middleware/authMiddleware');
 const FileData = require('../models/FileData');
 const { Configuration, OpenAIApi } = require('openai');
 require('dotenv').config();
@@ -290,6 +290,18 @@ router.post('/chat', protect, async (req, res) => {
     } catch (error) {
         console.error('Chat error:', error);
         res.status(500).json({ message: 'Error processing chat request' });
+    }
+});
+
+// Admin: Get all analysis history
+router.get('/all', protect, admin, async (req, res) => {
+    try {
+        const history = await AnalysisHistory.find({})
+            .sort({ analysisDate: -1 })
+            .populate('userId', 'username email');
+        res.json(history);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching all analysis history' });
     }
 });
 

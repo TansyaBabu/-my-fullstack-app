@@ -1,36 +1,41 @@
 const mongoose = require('mongoose');
 const User = require('../models/userModel');
+const bcrypt = require('bcrypt');
 require('dotenv').config();
 
-const fixAdmin = async () => {
+const adminEmail = 'admin@gmail.com';
+const adminUsername = 'admin';
+const adminPassword = 'admin123';
+
+(async () => {
     try {
-        // Connect to MongoDB
-        const mongoURI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/fullstack-app';
+        await mongoose.connect(process.env.MONGODB_URI);
         console.log('Connecting to MongoDB...');
-        await mongoose.connect(mongoURI);
-        console.log('Connected to MongoDB');
 
-        // Delete all existing users
-        await User.deleteMany({});
-        console.log('Deleted all existing users');
+        // Hash the password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(adminPassword, salt);
 
-        // Create new admin user
-        const adminUser = await User.create({
-            username: 'admin',
-            email: 'admin@example.com',
-            password: 'admin123',
+        // Upsert the admin user
+        const result = await User.findOneAndUpdate(
+            { email: adminEmail },
+            {
+                username: adminUsername,
+                email: adminEmail,
+                password: hashedPassword,
             isAdmin: true
-        });
-
-        console.log('Created new admin user:', {
-            id: adminUser._id,
-            email: adminUser.email,
-            isAdmin: adminUser.isAdmin,
-            username: adminUser.username
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+        console.log('Admin user upserted:', {
+            id: result._id,
+            email: result.email,
+            isAdmin: result.isAdmin,
+            username: result.username
         });
 
         // Verify the admin user
-        const verifiedAdmin = await User.findOne({ email: 'admin@example.com' });
+        const verifiedAdmin = await User.findOne({ email: adminEmail });
         console.log('Verified admin user:', {
             id: verifiedAdmin._id,
             email: verifiedAdmin.email,
@@ -38,11 +43,9 @@ const fixAdmin = async () => {
             username: verifiedAdmin.username
         });
 
-        process.exit(0);
+        await mongoose.disconnect();
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Error in fixAdmin.js:', error);
         process.exit(1);
     }
-};
-
-fixAdmin(); 
+})();

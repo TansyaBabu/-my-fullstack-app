@@ -4,19 +4,19 @@ const {
     registerUser, 
     loginUser,
     getUserProfile, 
-    // getUsers, // Remove admin controller
-    // deleteUser, // Remove admin controller
-    // getUserById, // Remove admin controller
-    // updateUser // Remove admin controller
+    getUsers,
+    deleteUser,
+    getUserById,
+    updateUser
 } = require('../controllers/userController');
-const { protect /* , admin */ } = require('../middleware/authMiddleware'); // Remove admin middleware
+const { protect, admin } = require('../middleware/authMiddleware');
 const User = require('../models/userModel');
 
 // Public routes
 router.post('/', registerUser); // Register user
 router.post('/login', loginUser); // Login user
 
-// Protected routes
+// Protected user routes
 router.route('/profile').get(protect, getUserProfile); // Get user profile
 
 // Update user profile
@@ -80,12 +80,11 @@ router.put('/password', protect, async (req, res) => {
     }
 });
 
-// Removed Admin routes:
-// router.route('/').get(protect, admin, getUsers);
-// router
-//     .route('/:id')
-//     .delete(protect, admin, deleteUser)
-//     .get(protect, admin, getUserById)
-//     .put(protect, admin, updateUser);
+// Admin-only user management routes
+router.route('/').get(protect, admin, getUsers); // List all users
+router.route('/:id')
+    .get(protect, admin, getUserById) // Get user by ID
+    .put(protect, admin, updateUser) // Update user
+    .delete(protect, admin, deleteUser); // Delete user
 
 module.exports = router; 

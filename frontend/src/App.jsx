@@ -8,6 +8,7 @@ import AnalyzeData from './components/AnalyzeData';
 import ChatWithFile from './components/ChatWithFile';
 import DashboardLayout from './components/DashboardLayout';
 import DashboardOverview from './components/DashboardOverview';
+import HomePage from './components/HomePage';
 import Login from './components/Login';
 import PrivateRoute from './components/PrivateRoute';
 import Register from './components/Register';
@@ -25,8 +26,11 @@ function App() {
                     <Route path="/admin" element={<AdminRoute />}>
                         <Route index element={<AdminDashboard />} />
                     </Route>
+                    {/* Public Home Page */}
+                    <Route path="/" element={<HomePage />} />
+                    {/* Authenticated dashboard and features */}
                     <Route
-                        path="/"
+                        path="/dashboard/*"
                         element={
                             <PrivateRoute>
                                 <DashboardLayout />
@@ -42,7 +46,7 @@ function App() {
                         <Route path="settings" element={<Settings />} />
                         <Route path="chat-with-file" element={<ChatWithFile />} />
                     </Route>
-                    <Route path="*" element={<PrivateRoute><DashboardOverview /></PrivateRoute>} />
+                    <Route path="*" element={<HomePage />} />
                 </Routes>
             </Router>
         </Provider>

@@ -8,8 +8,8 @@ const AdminRoute = () => {
     if (user && user.isAdmin) {
         return <Outlet />;
     } else if (user) {
-        // User is logged in but not admin, redirect to user dashboard or home
-        return <Navigate to="/" replace />;
+        // User is logged in but not admin, redirect to user dashboard
+        return <Navigate to="/dashboard" replace />;
     } else {
         // User is not logged in, redirect to login
         return <Navigate to="/login" replace />;

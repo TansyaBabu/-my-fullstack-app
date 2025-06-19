@@ -104,12 +104,25 @@ const getUserProfile = asyncHandler(async (req, res) => {
     }
 });
 
-// @desc    Get all users
-// @route   GET /api/users
+// @desc    Get all users (paginated)
+// @route   GET /api/users?page=1&limit=10
 // @access  Private/Admin
 const getUsers = asyncHandler(async (req, res) => {
-    const users = await User.find({});
-    res.json(users);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+        User.find({}).skip(skip).limit(limit),
+        User.countDocuments()
+    ]);
+
+    res.json({
+        users,
+        page,
+        totalPages: Math.ceil(total / limit),
+        totalUsers: total
+    });
 });
 
 // @desc    Delete user
