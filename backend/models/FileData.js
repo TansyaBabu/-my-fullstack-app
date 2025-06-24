@@ -15,10 +15,17 @@ const FileDataSchema = mongoose.Schema(
             type: Array,
             required: true,
         },
+        rowCount: {
+            type: Number,
+            required: false,
+        },
     },
     {
         timestamps: true,
     }
 );
+
+// Add an index on the 'user' field for faster querying of files by user
+FileDataSchema.index({ user: 1 });
 
 module.exports = mongoose.model('FileData', FileDataSchema); 

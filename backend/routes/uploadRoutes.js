@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const upload = require('../middleware/uploadMiddleware');
-const { uploadFile, getAllFilesAdmin } = require('../controllers/uploadController');
+const { uploadFile, getAllFilesAdmin, getFileData } = require('../controllers/uploadController');
 const { protect, admin } = require('../middleware/authMiddleware');
 const FileData = require('../models/FileData');
 

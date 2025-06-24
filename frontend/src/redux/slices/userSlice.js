@@ -71,16 +71,15 @@ export const logout = createAsyncThunk(
 // Update user action
 export const updateUser = createAsyncThunk(
     'user/updateUser',
-    async (userData, { rejectWithValue }) => {
+    async (userData, { getState, rejectWithValue }) => {
         try {
-            // Update localStorage
-            const currentUser = JSON.parse(localStorage.getItem('user'));
+            const currentUser = getState().user.user;
             const updatedUser = { ...currentUser, ...userData };
             localStorage.setItem('user', JSON.stringify(updatedUser));
             return updatedUser;
         } catch (error) {
             return rejectWithValue('Failed to update user data');
-            }
+        }
     }
 );
 

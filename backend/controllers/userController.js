@@ -179,6 +179,54 @@ const updateUser = asyncHandler(async (req, res) => {
     }
 });
 
+// @desc    Update user profile
+// @route   PUT /api/users/profile
+// @access  Private
+const updateUserProfile = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+        user.name = req.body.name || user.name;
+        user.email = req.body.email || user.email;
+
+        const updatedUser = await user.save();
+
+        res.json({
+            _id: updatedUser._id,
+            name: updatedUser.name,
+            username: updatedUser.username,
+            email: updatedUser.email,
+            isAdmin: updatedUser.isAdmin,
+        });
+    } else {
+        res.status(404);
+        throw new Error('User not found');
+    }
+});
+
+// @desc    Update user password
+// @route   PUT /api/users/password
+// @access  Private
+const updateUserPassword = asyncHandler(async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+        res.status(400);
+        throw new Error('Please provide current and new passwords.');
+    }
+
+    const user = await User.findById(req.user._id);
+
+    if (user && (await user.comparePassword(currentPassword))) {
+        user.password = newPassword;
+        await user.save();
+        res.json({ message: 'Password updated successfully' });
+    } else {
+        res.status(401);
+        throw new Error('Invalid current password');
+    }
+});
+
 module.exports = {
     registerUser,
     loginUser,
@@ -186,5 +234,7 @@ module.exports = {
     getUsers,
     deleteUser,
     getUserById,
-    updateUser
+    updateUser,
+    updateUserProfile,
+    updateUserPassword
 }; 

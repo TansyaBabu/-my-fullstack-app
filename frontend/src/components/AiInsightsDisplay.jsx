@@ -13,53 +13,59 @@ const api = axios.create({
 
 const AiInsightsDisplay = () => {
     const { user } = useSelector((state) => state.user);
-    const [analysisHistory, setAnalysisHistory] = useState([]);
-    const [selectedAnalysis, setSelectedAnalysis] = useState(null);
+    const [uploadedFiles, setUploadedFiles] = useState([]);
+    const [selectedFile, setSelectedFile] = useState(null);
     const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
     const [error, setError] = useState(null);
 
-    const fetchAnalysisHistory = async () => {
+    const fetchUploadedFiles = async () => {
         try {
-            const response = await api.get('/analysis/history', {
+            const response = await api.get('/upload/history', {
                 headers: {
                     Authorization: `Bearer ${user.token}`,
                 },
             });
-            setAnalysisHistory(response.data);
+            setUploadedFiles(response.data);
         } catch (error) {
-            console.error('Failed to fetch analysis history:', error);
-            setError('Failed to load analysis history. Please try again.');
+            console.error('Failed to fetch uploaded files:', error);
+            setError('Failed to load uploaded files. Please try again.');
         }
     };
 
-    const handleSelectAnalysis = (analysis) => {
-        setSelectedAnalysis(analysis);
+    const handleSelectFile = (file) => {
+        setSelectedFile(file);
     };
 
     const handleGenerateSummary = async () => {
-        if (!selectedAnalysis) {
-            setError('Please select an analysis to generate a summary.');
+        if (!selectedFile) {
+            setError('Please select a file to generate a summary.');
             return;
         }
         setIsGeneratingSummary(true);
         setError(null);
+        
+        console.log('Selected file:', selectedFile);
+        console.log('FileId being used:', selectedFile.id);
+        
         try {
-            const response = await api.post(`/analysis/summarize/${selectedAnalysis.fileId}`, {},
+            const response = await api.post(`/analysis/summarize/${selectedFile.id}`, {},
                 {
                     headers: {
                         Authorization: `Bearer ${user.token}`,
                     },
                 }
             );
-            setSelectedAnalysis(prev => ({ ...prev, summary: response.data.summary }));
-            setAnalysisHistory(prevHistory => 
-                prevHistory.map(item => 
-                    item.fileId === selectedAnalysis.fileId ? { ...item, summary: response.data.summary } : item
+            const updatedFile = { ...selectedFile, summary: response.data.summary };
+            setSelectedFile(updatedFile);
+            setUploadedFiles(prevFiles => 
+                prevFiles.map(item => 
+                    item.id === selectedFile.id ? updatedFile : item
                 )
             );
         } catch (error) {
             console.error('AI Summary generation error:', error);
-            setError('Failed to generate AI summary. Please try again.');
+            const errorMessage = error.response?.data?.message || 'Failed to generate AI summary. Please try again.';
+            setError(errorMessage);
         } finally {
             setIsGeneratingSummary(false);
         }
@@ -67,78 +73,66 @@ const AiInsightsDisplay = () => {
 
     useEffect(() => {
         if (user && user.token) {
-            fetchAnalysisHistory();
+            fetchUploadedFiles();
         }
     }, [user]);
 
     return (
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            <div className="px-4 py-6 sm:px-0">
-                <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                    <div className="p-6">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">AI Insights & Summaries</h2>
-                        
-                        {/* Analysis History */}
-                        <div className="mb-6">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Select Analysis</h3>
-                            {analysisHistory.length > 0 ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {analysisHistory.map((analysis) => (
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-12 px-4 relative overflow-hidden">
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-20 right-20 w-72 h-72 bg-gradient-to-br from-indigo-400/10 to-purple-400/10 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute bottom-20 left-20 w-96 h-96 bg-gradient-to-br from-pink-400/10 to-rose-400/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+            </div>
+
+            <div className="max-w-7xl mx-auto relative z-10">
+                <div className="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl overflow-hidden mb-8 border border-white/30">
+                    <div className="p-12 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 relative">
+                                    <h2 className="text-4xl font-bold text-white mb-3 drop-shadow-lg">AI Insights & Summaries</h2>
+                                    <p className="text-indigo-100 text-xl font-medium">Get intelligent insights from your data analyses</p>
+                    </div>
+                </div>
+
+                <div className="bg-white/90 backdrop-blur-2xl rounded-3xl shadow-2xl p-10 border border-white/30">
+                    <div className="mb-10">
+                        <h3 className="text-2xl font-bold text-gray-900 mb-6">Select a File for AI Insights</h3>
+                            {uploadedFiles.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {uploadedFiles.map((file) => (
                                         <div
-                                            key={analysis._id}
-                                            className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                                                selectedAnalysis?._id === analysis._id
-                                                    ? 'border-indigo-500 bg-indigo-50'
-                                                    : 'border-gray-200 hover:border-indigo-300'
-                                            }`}
-                                            onClick={() => handleSelectAnalysis(analysis)}
+                                            key={file.id}
+                                            className={`p-6 bg-white/80 rounded-3xl shadow-xl border-2 transition-all duration-300 cursor-pointer ${selectedFile?.id === file.id ? 'border-indigo-500 scale-105' : 'border-gray-200 hover:border-indigo-300'}`}
+                                            onClick={() => handleSelectFile(file)}
                                         >
-                                            <h4 className="font-medium text-gray-900">{analysis.fileName}</h4>
-                                            <p className="text-sm text-gray-500">
-                                                {analysis.chartType} Chart ({analysis.xAxis} vs {analysis.yAxis})
-                                            </p>
-                                            <p className="text-xs text-gray-400 mt-1">
-                                                {new Date(analysis.analysisDate).toLocaleDateString()}
-                                            </p>
+                                        <h4 className="font-bold text-gray-900 mb-2 truncate">{file.fileName}</h4>
+                                        <p className="text-sm text-gray-500 font-medium">Uploaded: {new Date(file.uploadDate).toLocaleDateString()}</p>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-gray-500">No analysis history found.</p>
+                            <p className="text-gray-600">No files found. Upload a file to get started.</p>
+                        )}
+                    </div>
+
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-3xl p-8 border border-purple-100 shadow-lg">
+                        <h3 className="text-2xl font-bold text-purple-900 mb-6">AI Summary</h3>
+                        <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 min-h-[250px] border border-purple-200">
+                            {isGeneratingSummary ? (
+                                <p className="text-purple-700">Generating AI Summary...</p>
+                            ) : error ? (
+                                <p className="text-red-600">{error}</p>
+                            ) : selectedFile?.summary ? (
+                                <p className="text-green-800 leading-relaxed">{selectedFile.summary}</p>
+                            ) : (
+                                <p className="text-purple-700">Select a file to view or generate a summary.</p>
                             )}
                         </div>
-
-                        {/* AI Summary Display */}
-                        <div className="mt-6">
-                            <h3 className="text-lg font-semibold text-gray-900 mb-2">AI Summary</h3>
-                            <div className="bg-gray-50 rounded-lg p-4 min-h-[200px]">
-                                {isGeneratingSummary ? (
-                                    <div className="flex flex-col items-center justify-center h-full">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-                                        <p className="mt-2 text-gray-600">Generating AI summary...</p>
-                                    </div>
-                                ) : error ? (
-                                    <div className="text-red-600">{error}</div>
-                                ) : selectedAnalysis?.summary ? (
-                                    <div className="prose max-w-none">
-                                        <p className="text-gray-700">{selectedAnalysis.summary}</p>
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                                        <p>Select an analysis to view or generate AI insights.</p>
-                                    </div>
-                                )}
-                            </div>
-                            <button
-                                onClick={handleGenerateSummary}
-                                disabled={!selectedAnalysis || isGeneratingSummary}
-                                className={`mt-4 w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded ${
-                                    (!selectedAnalysis || isGeneratingSummary) ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                            >
-                                {isGeneratingSummary ? 'Generating...' : 'Generate AI Summary'}
+                        <button
+                            onClick={handleGenerateSummary}
+                            disabled={!selectedFile || isGeneratingSummary}
+                            className={`mt-6 w-full py-3 rounded-2xl font-bold text-lg transition-all duration-300 ${!selectedFile || isGeneratingSummary ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-purple-500 to-pink-600 text-white hover:scale-105'}`}
+                        >
+                            {isGeneratingSummary ? 'Generating...' : 'Generate AI Summary'}
                             </button>
-                        </div>
                     </div>
                 </div>
             </div>

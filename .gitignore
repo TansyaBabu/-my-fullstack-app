@@ -34,7 +34,7 @@ __pycache__/
 *$py.class
 venv/
 env/
-.env
+.env 
 
 # Node modules
 node_modules/

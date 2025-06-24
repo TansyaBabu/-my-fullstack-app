@@ -1,5 +1,6 @@
 import { Provider } from 'react-redux';
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+import AdminAnalytics from './components/AdminAnalytics';
 import AdminDashboard from './components/AdminDashboard';
 import AdminRoute from './components/AdminRoute';
 import AiInsightsDisplay from './components/AiInsightsDisplay';
@@ -8,6 +9,8 @@ import AnalyzeData from './components/AnalyzeData';
 import ChatWithFile from './components/ChatWithFile';
 import DashboardLayout from './components/DashboardLayout';
 import DashboardOverview from './components/DashboardOverview';
+import DataCleaner from './components/DataCleaner';
+import DataCleanerHome from './components/DataCleanerHome';
 import HomePage from './components/HomePage';
 import Login from './components/Login';
 import PrivateRoute from './components/PrivateRoute';
@@ -25,6 +28,7 @@ function App() {
                     <Route path="/register" element={<Register />} />
                     <Route path="/admin" element={<AdminRoute />}>
                         <Route index element={<AdminDashboard />} />
+                        <Route path="analytics" element={<AdminAnalytics />} />
                     </Route>
                     {/* Public Home Page */}
                     <Route path="/" element={<HomePage />} />
@@ -45,6 +49,8 @@ function App() {
                         <Route path="ai-insights" element={<AiInsightsDisplay />} />
                         <Route path="settings" element={<Settings />} />
                         <Route path="chat-with-file" element={<ChatWithFile />} />
+                        <Route path="data-cleaner" element={<DataCleanerHome />} />
+                        <Route path="clean/:fileId" element={<DataCleaner />} />
                     </Route>
                     <Route path="*" element={<HomePage />} />
                 </Routes>

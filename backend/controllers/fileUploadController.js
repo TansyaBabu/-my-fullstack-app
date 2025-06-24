@@ -2,6 +2,8 @@ const asyncHandler = require('express-async-handler');
 const multer = require('multer');
 const xlsx = require('xlsx');
 const FileData = require('../models/FileData');
+const mongoose = require('mongoose');
+const AnalysisHistory = require('../models/AnalysisHistory');
 
 // Configure Multer for file uploads
 const storage = multer.memoryStorage(); // Store files in memory as buffers
@@ -81,25 +83,25 @@ const uploadFile = asyncHandler(async (req, res) => {
 // @route   GET /api/upload/history
 // @access  Private
 const getUploadHistory = asyncHandler(async (req, res) => {
-    console.log('Get upload history request:', {
-        user: req.user ? { id: req.user._id, email: req.user.email } : 'no user'
-    });
+    console.log(`Fetching upload history for user ID: ${req.user._id}`);
 
-    if (!req.user || !req.user._id) {
-        res.status(401);
-        throw new Error('User not authenticated');
-    }
+    // Explicitly cast the user ID to an ObjectId for a robust query
+    const userId = new mongoose.Types.ObjectId(req.user._id);
+    const files = await FileData.find({ user: userId }).sort({ createdAt: -1 });
 
-    const files = await FileData.find({ user: req.user._id }).sort({ createdAt: -1 });
+    console.log(`Database query found ${files.length} files for this user.`);
 
-    console.log('Found files:', files.length);
-
-    res.status(200).json(files.map(file => ({
+    const responseData = files.map(file => ({
         id: file._id,
-        fileName: file.fileName,
-        uploadDate: file.createdAt,
-        dataSize: file.data.length,
-    })));
+        fileName: file.fileName || 'Untitled',
+        uploadDate: file.createdAt || null,
+        dataSize: (file.rowCount != null) ? file.rowCount : (Array.isArray(file.data) ? file.data.length : 0),
+    }));
+
+    // Log the exact data being sent to the frontend
+    console.log('Sending file data to frontend:', JSON.stringify(responseData, null, 2));
+
+    res.status(200).json(responseData);
 });
 
 // @desc    Get details of a specific uploaded file
@@ -172,10 +174,26 @@ const getAllFilesAdmin = asyncHandler(async (req, res) => {
     });
 });
 
+// @desc    Delete a file (admin only)
+// @route   DELETE /api/upload/:id
+// @access  Private/Admin
+const deleteFile = asyncHandler(async (req, res) => {
+    const file = await FileData.findById(req.params.id);
+    if (!file) {
+        res.status(404);
+        throw new Error('File not found');
+    }
+    // Cascade delete: remove all analyses for this file (fileId is a string)
+    await AnalysisHistory.deleteMany({ fileId: file._id.toString() });
+    await file.deleteOne();
+    res.json({ message: 'File and associated charts deleted successfully' });
+});
+
 module.exports = {
     upload,
     uploadFile,
     getUploadHistory,
     getFileData,
     getAllFilesAdmin,
+    deleteFile,
 }; 

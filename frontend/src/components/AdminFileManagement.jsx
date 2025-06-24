@@ -49,6 +49,20 @@ const AdminFileManagement = () => {
   const [chartLoading, setChartLoading] = useState(false);
   const [chartError, setChartError] = useState(null);
 
+  // Add state for delete loading and error
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
+
+  // Add per-row loading state for file and analysis deletes
+  const [fileDeleteLoading, setFileDeleteLoading] = useState({});
+  const [analysisDeleteLoading, setAnalysisDeleteLoading] = useState({});
+
+  // Add state for per-file chart modal
+  const [chartsModalOpen, setChartsModalOpen] = useState(false);
+  const [chartsForFile, setChartsForFile] = useState([]);
+  const [chartsFileName, setChartsFileName] = useState('');
+  const [selectedChart, setSelectedChart] = useState(null);
+
   const fetchFiles = async (pageNum = 1) => {
     setLoading(true);
     setError(null);
@@ -132,6 +146,7 @@ const AdminFileManagement = () => {
       });
       setChartData(res.data.data);
       setChartMeta({
+        _id: analysis._id,
         chartType: analysis.chartType,
         xAxis: analysis.xAxis,
         yAxis: analysis.yAxis,
@@ -140,6 +155,14 @@ const AdminFileManagement = () => {
       });
     } catch (err) {
       setChartError(err.response?.data?.message || 'Failed to fetch chart data');
+      setChartMeta({
+        _id: analysis._id,
+        chartType: analysis.chartType,
+        xAxis: analysis.xAxis,
+        yAxis: analysis.yAxis,
+        fileName: analysis.fileName,
+        user: analysis.userId,
+      });
     } finally {
       setChartLoading(false);
     }
@@ -187,6 +210,54 @@ const AdminFileManagement = () => {
     }
     // Default fallback
     return <Bar data={data} />;
+  };
+
+  // File delete handler
+  const handleDeleteFile = async (fileId) => {
+    if (!window.confirm('Are you sure you want to delete this file?')) return;
+    setFileDeleteLoading((prev) => ({ ...prev, [fileId]: true }));
+    try {
+      await axios.delete(`/api/upload/${fileId}`, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      await fetchFiles(page);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete file');
+    } finally {
+      setFileDeleteLoading((prev) => ({ ...prev, [fileId]: false }));
+    }
+  };
+
+  // Update analysis delete handler to be per-row
+  const handleDeleteAnalysis = async (analysisId) => {
+    if (!window.confirm('Are you sure you want to delete this chart/analysis?')) return;
+    setAnalysisDeleteLoading((prev) => ({ ...prev, [analysisId]: true }));
+    setDeleteError(null);
+    try {
+      await axios.delete(`/api/analysis/${analysisId}`, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      await fetchAnalyses();
+    } catch (err) {
+      setDeleteError(err.response?.data?.message || 'Failed to delete analysis');
+    } finally {
+      setAnalysisDeleteLoading((prev) => ({ ...prev, [analysisId]: false }));
+    }
+  };
+
+  const handleOpenChartsModal = (fileId) => {
+    const file = files.find(f => f.id === fileId);
+    setChartsFileName(file?.fileName || '');
+    const fileCharts = analyses.filter(a => a.fileId === fileId);
+    setChartsForFile(fileCharts);
+    setChartsModalOpen(true);
+    setSelectedChart(null);
+  };
+
+  const handleCloseChartsModal = () => {
+    setChartsModalOpen(false);
+    setChartsForFile([]);
+    setSelectedChart(null);
   };
 
   return (
@@ -240,8 +311,18 @@ const AdminFileManagement = () => {
                       >
                         View
                       </button>
-                      <button className="bg-red-100 text-red-600 hover:bg-red-200 font-semibold px-3 py-1 rounded transition-colors ml-2">
-                        Delete
+                      <button
+                        className="bg-green-100 text-green-600 hover:bg-green-200 font-semibold px-3 py-1 rounded transition-colors ml-2"
+                        onClick={() => handleOpenChartsModal(f.id)}
+                      >
+                        View Chart(s)
+                      </button>
+                      <button
+                        className="bg-red-100 text-red-600 hover:bg-red-200 font-semibold px-3 py-1 rounded transition-colors ml-2"
+                        onClick={() => handleDeleteFile(f.id)}
+                        disabled={fileDeleteLoading[f.id]}
+                      >
+                        {fileDeleteLoading[f.id] ? 'Deleting...' : 'Delete'}
                       </button>
                     </td>
                   </tr>
@@ -279,67 +360,7 @@ const AdminFileManagement = () => {
         </div>
 
         {/* User-Created Charts Section */}
-        {user.isAdmin && (
-          <div className="mt-16">
-            <h3 className="text-2xl font-bold mb-6 text-indigo-800">User-Created Charts</h3>
-            {analysesError && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">{analysesError}</div>}
-            <div className="bg-white rounded-2xl shadow-lg overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-indigo-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">File Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">User</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">Chart Type</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">X Axis</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">Y Axis</th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-center text-xs font-bold text-indigo-700 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {analysesLoading ? (
-                    <tr><td colSpan={7} className="text-center py-8">Loading...</td></tr>
-                  ) : analyses.length === 0 ? (
-                    <tr><td colSpan={7} className="text-center py-8 text-gray-500">No charts found.</td></tr>
-                  ) : (
-                    analyses.map((a) => (
-                      <tr key={a._id} className="hover:bg-indigo-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap font-semibold">{a.fileName}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {a.userId ? (
-                            <span className="inline-flex items-center space-x-2">
-                              <span className="inline-block w-7 h-7 rounded-full bg-indigo-200 text-indigo-700 font-bold flex items-center justify-center">
-                                {a.userId.username?.[0]?.toUpperCase() || 'U'}
-                              </span>
-                              <span>
-                                <span className="font-semibold text-indigo-700">{a.userId.username}</span>
-                                <div className="text-xs text-gray-500">{a.userId?.email}</div>
-                              </span>
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 italic">Unknown</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">{a.chartType}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{a.xAxis}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{a.yAxis}</td>
-                        <td className="px-6 py-4 whitespace-nowrap">{new Date(a.analysisDate).toLocaleString()}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <button
-                            className="bg-indigo-600 text-white hover:bg-indigo-700 font-semibold px-3 py-1 rounded transition-colors shadow"
-                            onClick={() => handleViewChart(a)}
-                          >
-                            View Chart
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+        {/* Removed: Now handled per file */}
 
         {/* View Modal */}
         {viewModalOpen && (
@@ -403,12 +424,20 @@ const AdminFileManagement = () => {
               </div>
               {chartLoading ? (
                 <div className="text-center py-8">Loading...</div>
-              ) : chartError ? (
-                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
-                  {chartError === 'File not found'
-                    ? 'The original data file for this chart is missing. The chart cannot be displayed.'
-                    : chartError}
+              ) : chartError === 'File not found' ? (
+                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg flex flex-col items-center">
+                  <span>The original data file for this chart is missing. The chart cannot be displayed.</span>
+                  <button
+                    className="mt-4 bg-red-600 text-white hover:bg-red-700 font-semibold px-4 py-2 rounded shadow"
+                    onClick={() => handleDeleteAnalysis(chartMeta?._id)}
+                    disabled={analysisDeleteLoading[chartMeta?._id]}
+                  >
+                    {analysisDeleteLoading[chartMeta?._id] ? 'Deleting...' : 'Delete Chart'}
+                  </button>
+                  {deleteError && <div className="mt-2 text-red-600">{deleteError}</div>}
                 </div>
+              ) : chartError ? (
+                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">{chartError}</div>
               ) : chartData && chartMeta ? (
                 <div className="overflow-x-auto">
                   {renderChart()}
@@ -416,6 +445,95 @@ const AdminFileManagement = () => {
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">No chart data available.</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Per-file charts modal */}
+        {chartsModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+            <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full p-6 relative">
+              <button
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                onClick={handleCloseChartsModal}
+              >
+                &times;
+              </button>
+              <h3 className="text-xl font-bold mb-4">Charts for: {chartsFileName}</h3>
+              {chartsForFile.length === 0 ? (
+                <div className="text-center text-gray-500">No charts found for this file.</div>
+              ) : (
+                <table className="min-w-full divide-y divide-gray-200 mb-4">
+                  <thead className="bg-indigo-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">Chart Type</th>
+                      <th className="px-4 py-2 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">X Axis</th>
+                      <th className="px-4 py-2 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">Y Axis</th>
+                      <th className="px-4 py-2 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">Date</th>
+                      <th className="px-4 py-2 text-center text-xs font-bold text-indigo-700 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {chartsForFile.map((a) => (
+                      <tr key={a._id}>
+                        <td className="px-4 py-2 whitespace-nowrap">{a.chartType}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{a.xAxis}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{a.yAxis}</td>
+                        <td className="px-4 py-2 whitespace-nowrap">{new Date(a.analysisDate).toLocaleString()}</td>
+                        <td className="px-4 py-2 whitespace-nowrap text-center">
+                          <button
+                            className="bg-indigo-600 text-white hover:bg-indigo-700 font-semibold px-3 py-1 rounded transition-colors shadow mr-2"
+                            onClick={() => setSelectedChart(a)}
+                          >
+                            View
+                          </button>
+                          <button
+                            className="bg-red-100 text-red-600 hover:bg-red-200 font-semibold px-3 py-1 rounded transition-colors"
+                            onClick={() => handleDeleteAnalysis(a._id)}
+                            disabled={analysisDeleteLoading[a._id]}
+                          >
+                            {analysisDeleteLoading[a._id] ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {/* Chart view modal inside charts modal */}
+              {selectedChart && (
+                <div className="mb-4 p-4 border rounded-lg bg-indigo-50">
+                  <h4 className="font-bold mb-2">Chart Preview</h4>
+                  <button className="mb-2 text-indigo-600 underline" onClick={() => setSelectedChart(null)}>Back to list</button>
+                  {/* Reuse chart rendering logic */}
+                  <div className="my-4">
+                    {chartLoading ? (
+                      <div className="text-center py-8">Loading...</div>
+                    ) : chartError === 'File not found' ? (
+                      <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg flex flex-col items-center">
+                        <span>The original data file for this chart is missing. The chart cannot be displayed.</span>
+                        <button
+                          className="mt-4 bg-red-600 text-white hover:bg-red-700 font-semibold px-4 py-2 rounded shadow"
+                          onClick={() => handleDeleteAnalysis(selectedChart._id)}
+                          disabled={analysisDeleteLoading[selectedChart._id]}
+                        >
+                          {analysisDeleteLoading[selectedChart._id] ? 'Deleting...' : 'Delete Chart'}
+                        </button>
+                        {deleteError && <div className="mt-2 text-red-600">{deleteError}</div>}
+                      </div>
+                    ) : (
+                      <button
+                        className="bg-indigo-500 text-white px-3 py-1 rounded mb-2"
+                        onClick={() => handleViewChart(selectedChart)}
+                      >
+                        Load Chart
+                      </button>
+                    )}
+                    {/* Render chart if loaded */}
+                    {chartData && chartMeta && chartMeta._id === selectedChart._id && renderChart()}
+                  </div>
+                </div>
               )}
             </div>
           </div>

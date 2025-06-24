@@ -34,8 +34,11 @@ const Login = () => {
 
     useEffect(() => {
         if (user) {
-            console.log('User after login:', user);
-            if (user.isAdmin === true) {
+            if (
+                user.isAdmin === true &&
+                user.email &&
+                user.email.toLowerCase() === 'admin@example.com'
+            ) {
                 navigate('/admin', { replace: true });
             } else {
                 navigate('/dashboard', { replace: true });
@@ -55,19 +58,8 @@ const Login = () => {
 
         try {
             console.log('Attempting login with:', { email });
-            const result = await dispatch(login({ email, password })).unwrap();
-            console.log('Login successful, result:', result);
-            
-            if (!result || !result.token) {
-                console.error('Invalid login response:', result);
-                throw new Error('Invalid login response from server');
-            }
-
-            if (result.isAdmin) {
-                navigate('/admin', { replace: true });
-            } else {
-                navigate('/dashboard', { replace: true });
-            }
+            await dispatch(login({ email, password })).unwrap();
+            // No need to navigate here; useEffect will handle redirect
         } catch (err) {
             console.error('Login error:', err);
             setLocalError(err.message || 'Login failed. Please check your credentials and try again.');
@@ -135,7 +127,6 @@ const Login = () => {
                     </button>
                 </form>
                 <div className="text-sm text-center space-y-2 mt-4">
-                    <p className="text-gray-600">Admin Login: admin@example.com / admin123</p>
                     <p className="text-gray-600">
                         Don't have an account?{' '}
                         <Link to="/register" className="text-teal-600 hover:text-teal-800 font-semibold">

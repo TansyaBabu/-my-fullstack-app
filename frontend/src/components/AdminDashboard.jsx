@@ -133,7 +133,12 @@ const AdminDashboard = () => {
               <h3 className="text-lg font-bold text-purple-700 mb-2">View Analytics</h3>
               <p className="text-gray-500 mb-4">Monitor platform analytics and user activity.</p>
             </div>
-            <button className="dashboard-button bg-purple-600 text-white hover:bg-purple-700 transition">Go to Analytics</button>
+            <button 
+              className="dashboard-button bg-purple-600 text-white hover:bg-purple-700 transition"
+              onClick={() => navigate('/admin/analytics')}
+            >
+              Go to Analytics
+            </button>
           </div>
           <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col justify-between hover:shadow-2xl transition">
             <div>

@@ -30,11 +30,7 @@ const Register = () => {
             setPassword('');
             setConfirmPassword('');
             setTimeout(() => {
-                navigate('/login', {
-                    state: {
-                        message: 'Registration successful! Please log in to continue.'
-                    }
-                });
+                navigate('/login', { state: { message: 'Registration successful! Please log in.' } });
             }, 1500);
         }
     }, [registrationSuccess, navigate]);

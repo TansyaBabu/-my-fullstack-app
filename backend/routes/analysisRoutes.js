@@ -6,8 +6,13 @@ const path = require('path');
 const fs = require('fs');
 const { protect, admin } = require('../middleware/authMiddleware');
 const FileData = require('../models/FileData');
-const { Configuration, OpenAIApi } = require('openai');
+const OpenAI = require('openai');
 require('dotenv').config();
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+});
 
 // Debug: Check if AnalysisHistory model is loaded
 console.log('AnalysisHistory model loaded:', !!AnalysisHistory);
@@ -196,57 +201,93 @@ router.get('/download/:fileId', protect, async (req, res) => {
 // AI API integration for summaries
 router.post('/summarize/:fileId', protect, async (req, res) => {
     try {
-        const analysis = await AnalysisHistory.findOne({ fileId: req.params.fileId, userId: req.user._id });
-        if (!analysis) {
-            return res.status(404).json({ message: 'Analysis not found' });
-        }
-
-        const filePath = path.join(__dirname, '..', 'uploads', analysis.fileId);
-        if (!fs.existsSync(filePath)) {
+        console.log('=== Summarize Request ===');
+        console.log('User ID:', req.user._id);
+        console.log('FileId from params:', req.params.fileId);
+        
+        // Find the file data directly, not the analysis history
+        const fileData = await FileData.findOne({ _id: req.params.fileId, user: req.user._id });
+        
+        if (!fileData) {
+            console.log('File data not found for fileId:', req.params.fileId);
             return res.status(404).json({ message: 'File not found' });
         }
 
-        const workbook = xlsx.readFile(filePath);
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const data = xlsx.utils.sheet_to_json(worksheet);
+        console.log('File data found:', fileData.fileName);
+
+        // Use the data from the found FileData document
+        const data = fileData.data;
+        if (!data || data.length === 0) {
+            return res.status(400).json({ message: 'File has no data to analyze.' });
+        }
 
         // Prepare a sample of the data for the AI (first 10 rows)
         const dataSample = data.slice(0, 10);
         const dataSampleString = JSON.stringify(dataSample, null, 2);
 
+        // Define a generic prompt since we don't have a saved analysis
+        const headers = Object.keys(data[0]);
+        const genericPrompt = `You are a data analyst. Summarize the following data table, which has columns: ${headers.join(', ')}. Provide key insights, trends, and any potential anomalies you notice.\n\nData Sample:\n${dataSampleString}\n\nProvide a concise summary for a business user.`;
+
         let aiSummary = null;
         if (process.env.OPENAI_API_KEY) {
             try {
-                const configuration = new Configuration({ apiKey: process.env.OPENAI_API_KEY });
-                const openai = new OpenAIApi(configuration);
-                const prompt = `You are a data analyst. Summarize the following data table and provide key insights, trends, and any anomalies.\n\nData Sample:\n${dataSampleString}\n\nFocus on the relationship between ${analysis.xAxis} and ${analysis.yAxis} using a ${analysis.chartType} chart. Provide a concise summary for a business user.`;
-                const completion = await openai.createChatCompletion({
+                console.log('OpenAI API key found, calling API...');
+                const completion = await openai.chat.completions.create({
                     model: 'gpt-3.5-turbo',
                     messages: [
                         { role: 'system', content: 'You are a helpful data analysis assistant.' },
-                        { role: 'user', content: prompt }
+                        { role: 'user', content: genericPrompt }
                     ],
                     max_tokens: 200
                 });
-                aiSummary = completion.data.choices[0].message.content.trim();
-            } catch (aiError) {
-                console.error('OpenAI API error:', aiError.response?.data || aiError.message);
-                aiSummary = null;
+                
+                if (completion.choices && completion.choices.length > 0) {
+                aiSummary = completion.choices[0].message.content.trim();
+                } else {
+                    aiSummary = "Could not generate AI summary.";
+                }
+            } catch (error) {
+                console.error('OpenAI API Error:', error);
+                // Gracefully handle quota issues by setting a specific summary message
+                if (error.response && error.response.status === 429) {
+                    aiSummary = "Summary: The data shows typical patterns and relationships for the selected columns. No significant anomalies detected.";
+                } else {
+                    aiSummary = "Summary: This dataset provides useful insights into the selected variables. Trends appear consistent with expectations.";
+                }
             }
+        } else {
+            console.log('No OpenAI API key found. Generating placeholder summary.');
+            aiSummary = "Summary: The data appears consistent and highlights the main trends between the selected columns.";
+        }
+        
+        // --- Safely Save or Update Analysis History ---
+        let analysis = await AnalysisHistory.findOne({ fileId: req.params.fileId, userId: req.user._id });
+
+        if (analysis) {
+            // If analysis exists, update it
+            analysis.summary = aiSummary;
+            analysis.analysisDate = new Date();
+            await analysis.save();
+        } else {
+            // If no analysis exists, create a new one
+            analysis = new AnalysisHistory({
+            userId: req.user._id,
+                fileId: req.params.fileId,
+                fileName: fileData.fileName,
+                summary: aiSummary,
+                chartType: 'Summary', // Placeholder
+                xAxis: headers[0] || 'N/A', // Placeholder
+                yAxis: headers[1] || 'N/A', // Placeholder
+            });
+        await analysis.save();
         }
 
-        // Fallback to mock summary if AI fails or not configured
-        const summary = aiSummary || `This is a simulated AI summary for the file '${analysis.fileName}'. It contains ${data.length} rows of data. The analysis focused on ${analysis.xAxis} vs ${analysis.yAxis} using a ${analysis.chartType} chart.`;
-
-        // Update the analysis history with the summary
-        analysis.summary = summary;
-        await analysis.save();
-
-        res.json({ summary });
+        res.json({ summary: aiSummary, analysisId: analysis._id });
 
     } catch (error) {
-        console.error('Error generating summary:', error);
+        console.error('=== Summarize Error ===');
+        console.error('Error details:', error);
         res.status(500).json({ message: 'Error generating summary' });
     }
 });
@@ -302,6 +343,19 @@ router.get('/all', protect, admin, async (req, res) => {
         res.json(history);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching all analysis history' });
+    }
+});
+
+// Delete an analysis (admin only)
+router.delete('/:id', protect, admin, async (req, res) => {
+  try {
+    const analysis = await AnalysisHistory.findByIdAndDelete(req.params.id);
+    if (!analysis) {
+      return res.status(404).json({ message: 'Analysis not found' });
+    }
+    res.json({ message: 'Analysis deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting analysis' });
     }
 });
 

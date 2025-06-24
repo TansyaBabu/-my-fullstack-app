@@ -6,23 +6,17 @@ const analysisHistorySchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    fileName: {
+    fileId: {
         type: String,
         required: true,
-        trim: true
     },
-    fileId: {
+    fileName: {
         type: String,
         required: true
     },
-    filePath: {
-        type: String,
-        required: false
-    },
     chartType: {
         type: String,
-        enum: ['Bar', 'Line', 'Pie', 'Scatter', '3DBar', '3DLine', '3DPie', '3DColumn', '3DScatter'],
-        default: 'Bar'
+        required: true
     },
     xAxis: {
         type: String,
@@ -34,7 +28,7 @@ const analysisHistorySchema = new mongoose.Schema({
     },
     summary: {
         type: String,
-        required: false
+        default: ''
     },
     analysisDate: {
         type: Date,
@@ -44,10 +38,11 @@ const analysisHistorySchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Add index for faster queries
-analysisHistorySchema.index({ analysisDate: -1 });
-analysisHistorySchema.index({ userId: 1, fileId: 1 }); // Compound index for faster lookups
+// Create a compound index to ensure one analysis per user per file
+analysisHistorySchema.index({ userId: 1, fileId: 1 }, { unique: true });
 
 const AnalysisHistory = mongoose.model('AnalysisHistory', analysisHistorySchema);
+console.log('AnalysisHistory model loaded:', !!AnalysisHistory);
+console.log('AnalysisHistory model name:', AnalysisHistory.modelName);
 
 module.exports = AnalysisHistory;

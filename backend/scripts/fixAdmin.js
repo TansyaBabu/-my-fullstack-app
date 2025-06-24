@@ -1,51 +1,34 @@
 const mongoose = require('mongoose');
 const User = require('../models/userModel');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
-const adminEmail = 'admin@gmail.com';
-const adminUsername = 'admin';
-const adminPassword = 'admin123';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/your-db-name';
 
-(async () => {
-    try {
-        await mongoose.connect(process.env.MONGODB_URI);
-        console.log('Connecting to MongoDB...');
+async function fixAdmin() {
+    await mongoose.connect(MONGODB_URI);
 
-        // Hash the password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(adminPassword, salt);
+    const email = 'admin@example.com';
+    const password = 'admin123';
 
-        // Upsert the admin user
-        const result = await User.findOneAndUpdate(
-            { email: adminEmail },
-            {
-                username: adminUsername,
-                email: adminEmail,
-                password: hashedPassword,
-            isAdmin: true
-            },
-            { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
-        console.log('Admin user upserted:', {
-            id: result._id,
-            email: result.email,
-            isAdmin: result.isAdmin,
-            username: result.username
+    let user = await User.findOne({ email });
+    if (!user) {
+        user = new User({
+            username: 'admin',
+            email,
+            password: await bcrypt.hash(password, 10),
+            isAdmin: true,
         });
-
-        // Verify the admin user
-        const verifiedAdmin = await User.findOne({ email: adminEmail });
-        console.log('Verified admin user:', {
-            id: verifiedAdmin._id,
-            email: verifiedAdmin.email,
-            isAdmin: verifiedAdmin.isAdmin,
-            username: verifiedAdmin.username
-        });
-
-        await mongoose.disconnect();
-    } catch (error) {
-        console.error('Error in fixAdmin.js:', error);
-        process.exit(1);
+        await user.save();
+        console.log('Admin user created.');
+    } else {
+        user.isAdmin = true;
+        user.password = await bcrypt.hash(password, 10);
+        await user.save();
+        console.log('Admin user updated.');
     }
-})();
+
+    mongoose.disconnect();
+}
+
+fixAdmin();

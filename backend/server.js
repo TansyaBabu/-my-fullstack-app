@@ -6,7 +6,11 @@ const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const fileUploadRoutes = require('./routes/fileUploadRoutes');
 const analysisRoutes = require('./routes/analysisRoutes');
+const insightRoutes = require('./routes/insightRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const dataProcessingRoutes = require('./routes/dataProcessingRoutes');
+const reportRoutes = require('./routes/reportRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 require('dotenv').config();
 const mongoose = require('mongoose');
 
@@ -54,7 +58,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/upload', fileUploadRoutes);
 app.use('/api/analysis', analysisRoutes);
+app.use('/api/insights', insightRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/process', dataProcessingRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/admin/analytics', analyticsRoutes);
 
 // Default route
 app.get('/', (req, res) => {
@@ -70,14 +78,42 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Start server
-const server = app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log('MongoDB connection status:', mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected');
-});
+// Graceful shutdown function
+const gracefulShutdown = (server) => {
+    console.log('Closing HTTP server.');
+    server.close(() => {
+        console.log('HTTP server closed.');
+        mongoose.connection.close(false, () => {
+            console.log('MongoDB connection closed.');
+            process.exit(0);
+        });
+    });
+};
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-    console.error('Unhandled Promise Rejection:', err);
-    server.close(() => process.exit(1));
-});
+const startServer = async () => {
+    try {
+        // The new connectDB returns a promise that resolves on a stable connection
+        await connectDB();
+
+        const server = app.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+
+        // Handle unhandled promise rejections
+        process.on('unhandledRejection', (err) => {
+            console.error('Unhandled Promise Rejection:', err);
+            gracefulShutdown(server);
+        });
+        
+        process.on('SIGTERM', () => {
+            console.info('SIGTERM signal received.');
+            gracefulShutdown(server);
+        });
+
+    } catch (error) {
+        console.error('Failed to connect to MongoDB:', error);
+        process.exit(1);
+    }
+};
+
+startServer();
